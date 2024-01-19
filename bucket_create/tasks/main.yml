@@ -1,0 +1,43 @@
+---
+# tasks file for bucket_create
+- name: Prepare an S3 Bucket
+  block:
+    - name: Make sure boto, boto3, botocore are installed
+      pip:
+        name: "{{ item }}"
+      loop:
+        - boto
+        - boto3
+        - botocore
+
+
+    - name: Define bucket policy
+      set_fact:
+        s3_bucket_policy: |
+          {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "PublicRead",
+                "Effect": "Allow",
+                "Principal": "*",
+                "Action": "s3:GetObject",
+                "Resource": "arn:aws:s3:::kmackey-logs/*"
+              }
+            ]
+          }
+    - debug: msg="{{ s3_bucket_policy }}"
+
+    - name: Create S3 Bucket
+      s3_bucket:
+        name: kmackey-logs
+        region: us-east-1
+        state: present
+        policy: "{{ s3_bucket_policy }}"
+        public_access:
+          block_public_acls: false
+          ignore_public_acls: false
+          block_public_policy: false
+          restrict_public_buckets: false
+
+  tags: ['never', 'create']
